@@ -1,0 +1,59 @@
+#
+# Copyright:: Copyright (c) 2014 Chef Software Inc.
+# License:: Apache License, Version 2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+language: ruby
+sudo: false
+cache: bundler
+
+# Early warning system to catch if Rubygems breaks something
+before_install:
+  - gem update --system $(grep rubygems omnibus_overrides.rb | cut -d'"' -f2)
+  - gem --version
+  - gem uninstall bundler -a -x
+  - rvm @global do gem uninstall bundler -a -x
+  - gem install bundler -v $(grep bundler omnibus_overrides.rb | cut -d'"' -f2)
+  - bundle --version
+  - rm -f .bundle/config
+
+bundler_args: --without changelog development docgen guard maintenance omnibus_package tools aix bsd mac_os_x solaris windows --frozen
+
+env:
+  global:
+    # To force us to load the version of bundler we want.
+    BUNDLE_ENABLE_TRAMPOLINE: 1
+
+matrix:
+  include:
+    - rvm: 2.2.5
+      env:
+        RSPEC: 1
+      script: $(which bundle) exec rspec
+    - rvm: 2.3.1
+      env:
+        RSPEC: 1
+      script: $(which bundle) exec rspec
+    - rvm: 2.3.1
+      env:
+        COOKSTYLE: 1
+      script: $(which bundle) exec rake style:cookstyle
+    - rvm: 2.3.1
+      env:
+        FOODCRITIC: 1
+      script: $(which bundle) exec rake style:foodcritic
+
+branches:
+  only:
+    - master
